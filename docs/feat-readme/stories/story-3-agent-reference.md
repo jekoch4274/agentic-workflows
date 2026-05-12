@@ -6,7 +6,7 @@
 > **Priority**: P1 — Should Have
 > **Estimate**: 3
 > **Status**: Done
-> **Issue**: TBD
+> **Issue**: #9
 
 ---
 
