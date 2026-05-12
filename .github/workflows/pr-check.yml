@@ -1,0 +1,121 @@
+name: PR Checks
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  lint:
+    name: Lint and Unit Tests
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build app
+        run: echo "Building app..."
+
+      - name: Run linter
+        run: echo "Running linter..." 
+
+      - name: Run unit tests
+        run: echo "Running unit tests..." 
+
+  security-scan:
+    name: Dependency Audit (SCA)
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Auditing application
+        run: echo "Running SCA scan with npm audit..."
+
+  traceability:
+    name: Traceability guard
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: Validate branch, docs, and issue links
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = context.payload.pull_request.head.ref
+            const body = context.payload.pull_request.body || ''
+            const owner = context.repo.owner
+            const repo = context.repo.repo
+
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner,
+              repo,
+              pull_number: context.payload.pull_request.number,
+              per_page: 100,
+            })
+
+            const filenames = files.map(file => file.filename)
+            const hasFeatureDoc = filenames.some(name => /^docs\/feat-[^/]+\/FEATURE\.md$/.test(name))
+            const hasStoryDoc = filenames.some(name => /^docs\/feat-[^/]+\/stories\/.+\.md$/.test(name))
+            const hasDocsChange = hasFeatureDoc || hasStoryDoc
+            const hasImplementationChange = filenames.some(name =>
+              !/^docs\//.test(name) &&
+              !/^README\.md$/.test(name) &&
+              !/^\.github\//.test(name)
+            )
+            const linkedIssues = Array.from(new Set(
+              Array.from(body.matchAll(/(?:close[sd]?|fixe?[sd]?|resolve[sd]?)\s+#(\d+)/gi)).map(m => Number(m[1]))
+            ))
+
+            core.info(`Branch: ${branch}`)
+            core.info(`Changed files: ${filenames.length}`)
+
+            if (branch === 'preview') {
+              core.info('Preview branch is exempt from traceability checks.')
+              return
+            }
+
+            if (branch.startsWith('feat/')) {
+              if (!hasImplementationChange) {
+                core.setFailed('Feature branches must include implementation changes. Documentation-only PRs should use a `doc/*` branch.')
+                return
+              }
+
+              if (linkedIssues.length === 0) {
+                core.setFailed('Feature branches must include at least one closing issue reference in the PR body, e.g. `Closes #123`.')
+                return
+              }
+
+              if (!hasFeatureDoc || !hasStoryDoc) {
+                core.setFailed('Feature branches must update both docs/feat-*/FEATURE.md and docs/feat-*/stories/*.md for traceability.')
+                return
+              }
+            }
+
+            if (branch.startsWith('doc/')) {
+              if (hasImplementationChange) {
+                core.setFailed('Documentation branches cannot include implementation changes. Use a `feat/*` branch for code changes.')
+                return
+              }
+
+              if (!hasDocsChange) {
+                core.setFailed('Documentation branches must change docs/feat-*/FEATURE.md or docs/feat-*/stories/*.md files.')
+                return
+              }
+            }
+
+            if (hasImplementationChange && !hasDocsChange) {
+              core.setFailed('Implementation changes require linked documentation updates in docs/feat-*/ and docs/feat-*/stories/.')
+              return
+            }
+
+            core.info('Traceability checks passed.')

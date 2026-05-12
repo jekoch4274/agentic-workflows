@@ -1,0 +1,189 @@
+name: PR Merge Handler
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch ref to deploy (e.g. main)'
+        required: false
+        default: 'main'
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  on-merge:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summarize merge event
+        run: |
+          echo "Merge workflow triggered."
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "Merged PR #${{ github.event.pull_request.number }} from ${{ github.event.pull_request.head.ref }}"
+          else
+            echo "Manual dispatch for ref ${{ inputs.ref }}"
+          fi
+
+      - name: Checkout for story parsing
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Create or close linked issues based on branch path
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            const branch = context.payload.pull_request.head.ref
+            const prNumber = context.payload.pull_request.number
+            const prUrl = context.payload.pull_request.html_url
+            const prTitle = context.payload.pull_request.title
+            const body = context.payload.pull_request.body || ''
+            const owner = context.repo.owner
+            const repo = context.repo.repo
+
+            if (branch.startsWith('doc/')) {
+              // Parse doc branch: find stories and create issues for those without Issue field
+              const docsDir = './docs'
+              if (!fs.existsSync(docsDir)) {
+                console.log('No docs directory found.')
+                return
+              }
+
+              const featDirs = fs.readdirSync(docsDir).filter(f => f.startsWith('feat-'))
+              let createdCount = 0
+
+              for (const featDir of featDirs) {
+                const storiesDir = path.join(docsDir, featDir, 'stories')
+                if (!fs.existsSync(storiesDir)) continue
+
+                const storyFiles = fs.readdirSync(storiesDir).filter(f => f.endsWith('.md') && f.match(/^story-\d+/))
+                for (const storyFile of storyFiles) {
+                  const storyPath = path.join(storiesDir, storyFile)
+                  const storyText = fs.readFileSync(storyPath, 'utf8')
+                  
+                  // Check if story already has an issue
+                  if (storyText.match(/^> \*\*Issue\*\*: #(\d+)/m)) {
+                    console.log(`Story ${storyFile} already has issue linked, skipping.`)
+                    continue
+                  }
+
+                  // Extract story metadata
+                  const titleMatch = storyText.match(/^# Story: (.+)$/m)
+                  const storyIdMatch = storyText.match(/^> \*\*Story ID\*\*: (.+)$/m)
+                  const title = titleMatch ? titleMatch[1].trim() : storyFile.replace(/^story-\d+-/, '').replace(/-/g, ' ').trim()
+                  const storyId = storyIdMatch ? storyIdMatch[1].trim() : storyFile.replace('.md', '')
+
+                  const issueTitle = `Story ${storyId.match(/\d+/)[0]}: ${title}`
+                  const issueBody = `## Feature\n${featDir}\n\n## Story ID\n${storyId}\n\n## Auto-created\nGenerated from merged doc PR #${prNumber}.\n\nSource: ${storyPath}`
+
+                  try {
+                    const issue = await github.rest.issues.create({ owner, repo, title: issueTitle, body: issueBody })
+                    console.log(`Created issue #${issue.data.number}: ${issueTitle}`)
+                    createdCount++
+                  } catch (err) {
+                    console.log(`Error creating issue for ${storyFile}: ${err.message}`)
+                  }
+                }
+              }
+
+              console.log(`Created ${createdCount} issue(s) from doc branch merge.`)
+            }
+
+            if (branch.startsWith('feat/')) {
+              const closes = Array.from(new Set(
+                Array.from(body.matchAll(/(?:close[sd]?|fixe?[sd]?|resolve[sd]?)\s+#(\d+)/gi)).map(m => Number(m[1]))
+              ))
+              if (closes.length === 0) {
+                console.log('No linked issues found in PR body to close for feat branch.')
+                return
+              }
+              for (const issueNum of closes) {
+                await github.rest.issues.update({ owner, repo, issue_number: issueNum, state: 'closed' })
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: issueNum,
+                  body: `Closed by merge of PR #${prNumber} (${prUrl}) from branch ${branch}.`
+                })
+                console.log(`Closed issue #${issueNum} for feat branch ${branch}`)
+              }
+            }
+  docs-sync:
+    name: Sync issue tracker
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    needs: on-merge
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run issue sync
+        run: python3 scripts/issue-sync.py
+
+      - name: Commit tracker updates
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/PROCESS_TRACKER.md
+          git diff --cached --quiet || (git commit -m "chore: sync issue tracker [skip ci]" && git push)
+
+  version-bump:
+    name: Bump minor version on merge
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+    needs: docs-sync
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump minor version in web/ and infra/cdk/
+        run: |
+          node - <<'EOF'
+          const fs = require('fs');
+          function bumpMinor(v) {
+            const [major, minor] = v.split('.').map(Number);
+            return `${major}.${minor + 1}.0`;
+          }
+          const webPkg = JSON.parse(fs.readFileSync('web/package.json', 'utf8'));
+          const newVersion = bumpMinor(webPkg.version);
+          webPkg.version = newVersion;
+          fs.writeFileSync('web/package.json', JSON.stringify(webPkg, null, 2) + '\n');
+          const cdkPkg = JSON.parse(fs.readFileSync('infra/cdk/package.json', 'utf8'));
+          cdkPkg.version = newVersion;
+          fs.writeFileSync('infra/cdk/package.json', JSON.stringify(cdkPkg, null, 2) + '\n');
+          console.log('Bumped to version:', newVersion);
+          EOF
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          VERSION=$(node -e "console.log(require('./web/package.json').version)")
+          git add web/package.json infra/cdk/package.json
+          git diff --cached --quiet || (git commit -m "chore: bump minor version to $VERSION [skip ci]" && git push)
