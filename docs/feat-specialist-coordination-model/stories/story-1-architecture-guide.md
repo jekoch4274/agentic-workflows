@@ -5,19 +5,19 @@
 
 ## Acceptance Criteria
 
-- [ ] SPECIALIST_COORDINATION_MODEL.md explains the 5-phase workflow
+- [x] SPECIALIST_COORDINATION_MODEL.md explains the 5-phase workflow
   - Phase 1: PO decomposes feature idea into problem + user story
   - Phase 2: Handoff chain (Architect→Security→Designer→QE) builds frozen spec
   - Phase 3: Developers implement to spec with escalation path
   - Phase 4: PR review cycle runs reverse (QE→Designer→Security→PO)
   - Phase 5: PO approval gates deployment
-- [ ] Document includes role descriptions (who is each agent, what do they own)
-- [ ] Tool scoping (role-based boundaries) explained
-- [ ] FEATURE.md template shown with all required sections
-- [ ] Handoff context example provided (one feature end-to-end)
-- [ ] Cost model explained (expensive intent, cheap execution)
-- [ ] Diagram or workflow visual included (ASCII or Mermaid)
-- [ ] No project-specific assumptions (template-agnostic)
+- [x] Document includes role descriptions (who is each agent, what do they own)
+- [x] Tool scoping (role-based boundaries) explained
+- [x] FEATURE.md template shown with all required sections
+- [x] Handoff context example provided (one feature end-to-end)
+- [x] Cost model explained (expensive intent, cheap execution)
+- [x] Diagram or workflow visual included (ASCII or Mermaid)
+- [x] No project-specific assumptions (template-agnostic)
 
 ## Implementation Notes
 

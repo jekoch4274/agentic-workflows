@@ -20,14 +20,14 @@ As a **developer on an agentic workflow project**, I want **a complete coordinat
 
 ## Acceptance Criteria
 
-- [ ] SPECIALIST_COORDINATION_MODEL.md provides end-to-end workflow documentation
-- [ ] Five SKILL.md files define shared domain knowledge (architect, security, testing, design, coordination)
-- [ ] Each SKILL includes patterns, examples, templates, and anti-patterns
-- [ ] Agent instructions reference appropriate SKILL files for their domain
-- [ ] Workflow architecture supports bidirectional verification (spec→implement→review)
-- [ ] Documentation is template-agnostic (usable for any tech stack)
-- [ ] Handoff patterns are explicit (who→who, when, what context)
-- [ ] Cost model is documented (expensive decisions once, cheap executions metered)
+- [x] SPECIALIST_COORDINATION_MODEL.md provides end-to-end workflow documentation
+- [x] Five SKILL.md files define shared domain knowledge (architect, security, testing, design, coordination)
+- [x] Each SKILL includes patterns, examples, templates, and anti-patterns
+- [x] Agent instructions reference appropriate SKILL files for their domain
+- [x] Workflow architecture supports bidirectional verification (spec→implement→review)
+- [x] Documentation is template-agnostic (usable for any tech stack)
+- [x] Handoff patterns are explicit (who→who, when, what context)
+- [x] Cost model is documented (expensive decisions once, cheap executions metered)
 
 ---
 
@@ -51,30 +51,30 @@ The model defines:
 
 ## Security Considerations (Security)
 
-- [ ] Model does not introduce new attack surface (docs only)
-- [ ] FEATURE.md templates include security section
-- [ ] security-checklist SKILL defines threat modeling template
-- [ ] Examples include OWASP Top 10 patterns
-- [ ] Compliance frameworks (GDPR) documented in SKILL
+- [x] Model does not introduce new attack surface (docs only)
+- [x] FEATURE.md templates include security section
+- [x] security-checklist SKILL defines threat modeling template
+- [x] Examples include OWASP Top 10 patterns
+- [x] Compliance frameworks (GDPR) documented in SKILL
 
 ---
 
 ## Design Considerations (Designer)
 
-- [ ] component-design SKILL provides WCAG 2.1 AA accessibility patterns
-- [ ] Storybook story templates included
-- [ ] Responsive design breakpoints defined
-- [ ] Component spec template provided for designers to use
+- [x] component-design SKILL provides WCAG 2.1 AA accessibility patterns
+- [x] Storybook story templates included
+- [x] Responsive design breakpoints defined
+- [x] Component spec template provided for designers to use
 
 ---
 
 ## Testing Considerations (QE)
 
-- [ ] testing-strategy SKILL defines test pyramid (60/25/10)
-- [ ] AC→test mapping template provided
-- [ ] QE verification tests concept defined (tests QE owns)
-- [ ] Critical path definition pattern documented
-- [ ] Examples show Vitest, integration, and Playwright patterns
+- [x] testing-strategy SKILL defines test pyramid (60/25/10)
+- [x] AC→test mapping template provided
+- [x] QE verification tests concept defined (tests QE owns)
+- [x] Critical path definition pattern documented
+- [x] Examples show Vitest, integration, and Playwright patterns
 
 ---
 

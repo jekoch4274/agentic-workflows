@@ -5,14 +5,14 @@
 
 ## Acceptance Criteria
 
-- [ ] Each of 8 agent files (.github/agents/*.md) includes:
+- [x] Each of 8 agent files (.github/agents/*.md) includes:
   - Tool scope section (what they can/cannot edit)
   - Consultative workflow (when to ask other specialists)
   - Handoff pattern (who they delegate to next)
   - Reference to relevant SKILL.md files
   - Example request/response for their role
   
-- [ ] Agent handoff chain documented:
+- [x] Agent handoff chain documented:
   ```
   PO decomposes problem
     ↓
@@ -29,7 +29,7 @@
   PR Review (reverse: QE→Designer→Security→PO)
   ```
 
-- [ ] Tool scoping prevents accidental edits:
+- [x] Tool scoping prevents accidental edits:
   - PO: can edit docs/feat-*/, cannot edit code/tests/design/infra
   - Architect: can read .github/skills/, produces FEATURE.md section
   - Security: can read FEATURE.md, produces security considerations
@@ -37,7 +37,7 @@
   - QE: can create Playwright tests, produces testing section
   - Developers: can only edit code/tests per frozen spec
 
-- [ ] Each agent includes example of:
+- [x] Each agent includes example of:
   - "When to consult other agents" (when to use runSubagent tool)
   - "Response contract" (what output format is expected)
   - "Escalation path" (what to do if blocked)

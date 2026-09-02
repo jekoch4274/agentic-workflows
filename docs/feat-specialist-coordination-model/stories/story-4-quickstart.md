@@ -5,19 +5,19 @@
 
 ## Acceptance Criteria
 
-- [ ] Quickstart section in SPECIALIST_COORDINATION_MODEL.md includes:
+- [x] Quickstart section in SPECIALIST_COORDINATION_MODEL.md includes:
   - "First feature checklist" (steps to follow for first feature)
   - "Run your first spec cycle" (how to use agents to build FEATURE.md)
   - "Set up your project structure" (docs/, .github/agents/, etc.)
   - "Customize agents" (which parts to change per project)
 
-- [ ] README in agentic-workflows repo links to:
+- [x] README in agentic-workflows repo links to:
   - SPECIALIST_COORDINATION_MODEL.md as entry point
   - .github/skills/ as reference library
   - Example FEATURE.md (from resume-app or template)
   - How to adapt agents for your tech stack
 
-- [ ] Include concrete example workflow:
+- [x] Include concrete example workflow:
   - Feature idea: "Add user authentication"
   - PO spec: problem + user story + AC
   - Architect review: data model, API boundaries
@@ -27,7 +27,7 @@
   - Final FEATURE.md (all sections combined)
   - Developer tasks (implementation)
 
-- [ ] Troubleshooting section:
+- [x] Troubleshooting section:
   - "Spec is unclear, team stuck" → escalation path
   - "Feature is too big" → break into stories
   - "Specialist disagrees with another" → how to resolve
